@@ -1,5 +1,6 @@
 from django.db import models
 from datetime import date
+from django.contrib.auth.models import User
 
 
 # deklaracja statycznej listy wyboru do wykorzystania w klasie modelu
@@ -44,12 +45,16 @@ class Osoba(models.Model):
     plec = models.IntegerField(choices = PLCIE.choices, default=PLCIE.choices[2][0])
     stanowisko = models.ForeignKey('Stanowisko', on_delete = models.CASCADE)
     data_dodania = models.DateField(default = date.today, blank=False, null=False)
+    wlasciciel = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
 
     def __str__(self):
         return f'{self.imie} {self.nazwisko}'
     
     class Meta:
         ordering = ['nazwisko']
+        permissions = [
+            ("view_person_other_owner", "Pozwala zobaczyć modele osoba innych właścicieli")
+        ]
 
 class Stanowisko(models.Model):
     nazwa = models.CharField(max_length=80, blank = False, null = False)
@@ -57,3 +62,5 @@ class Stanowisko(models.Model):
 
     def __str__(self):
         return self.nazwa
+    
+
