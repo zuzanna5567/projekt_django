@@ -73,9 +73,10 @@ class StanowiskoSerializer(serializers.Serializer):
         return instance
     
 class TeamSerializer(serializers.ModelSerializer):
-    model = Team
-    fields = ['id', 'name', 'country']
-    read_only_fields = ['id']
+    class Meta:
+        model = Team
+        fields = ['id', 'name', 'country']
+        read_only_fields = ['id']
 
 class OsobaSerializer(serializers.ModelSerializer):
     def validate_imie(self, value):
