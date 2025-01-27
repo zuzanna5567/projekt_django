@@ -11,7 +11,15 @@ from django.contrib.auth.models import User
 from django.http import Http404, HttpResponse
 import datetime
 from django.core.exceptions import PermissionDenied
-from django.contrib.auth.decorators import permission_required
+from django.contrib.auth.decorators import permission_required, login_required
+from django.contrib.auth import logout
+
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        logout(request)
+        return Response({"message": "Wylogowano pomyślnie!"})
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -52,7 +60,7 @@ def person_detail(request, pk):
 
 
 @api_view(['PUT'])
-@authentication_classes([SessionAuthentication, TokenAuthentication])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
 @permission_classes([IsAuthenticated])
 def person_update(request, pk):
 
@@ -74,7 +82,7 @@ def person_update(request, pk):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 @api_view(['DELETE'])
-@authentication_classes([SessionAuthentication, TokenAuthentication])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
 @permission_classes([IsAuthenticated])    
 def person_delete(request, pk):
     try:
@@ -87,11 +95,14 @@ def person_delete(request, pk):
         return Response(status=status.HTTP_204_NO_CONTENT)
     
 @api_view(['GET', 'POST'])
-@authentication_classes([BasicAuthentication])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
 @permission_classes([IsAuthenticated])
 def osoba_list(request):
     if request.method == 'GET':
-        osoby = Osoba.objects.filter(wlasciciel = request.user)
+        if request.user.has_perm("folder_aplikacji.view_person_other_owner"):
+            osoby = Osoba.objects.all()
+        else:
+            osoby = Osoba.objects.filter(wlasciciel = request.user)
         serializer = OsobaSerializer(osoby, many = True)
         return Response(serializer.data)
     if request.method == 'POST':
@@ -187,6 +198,8 @@ def welcome_view(request):
         </body></html>"""
     return HttpResponse(html)
 
+@login_required
+@permission_required('folder_aplikacji.view_person')
 def person_list_html(request):
     # pobieramy wszystkie obiekty Person z bazy poprzez QuerySet
     persons = Person.objects.all()
